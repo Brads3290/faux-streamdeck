@@ -10,23 +10,18 @@ import (
 )
 
 var idExtractor *regexp.Regexp
+var chanQueue chan string
 
 // StartServer starts the http server to listen to the
 func StartServer() (chan error, error) {
 	var err error
 
-	/*
-		/command/11df3e69-1ee5-4744-8dd9-076210c3f871
-	*/
+	// Pre-server initialization
+	CreateRegex()
+	RegisterHandlers()
+	chanQueue = StartQueueThread()
 
-	idExtractor, err = regexp.Compile(`/command/(\w{8}-\w{4}-\w{4}-\w{4}-\w{12})`)
-	if err != nil {
-		panic(err)
-	}
-
-	http.HandleFunc("/commands", GetCommands)
-	http.HandleFunc("/command/", ExecuteCommand)
-
+	// Start the server on a separate thread
 	chErr := make(chan error)
 	go func() {
 		err := http.ListenAndServe(config.General.Server.ListenOn, nil)
@@ -43,6 +38,20 @@ func StartServer() (chan error, error) {
 	}
 
 	return chErr, err
+}
+
+func RegisterHandlers() {
+	http.HandleFunc("/commands", GetCommands)
+	http.HandleFunc("/command/", ExecuteCommand)
+}
+
+func CreateRegex() {
+	var err error
+
+	idExtractor, err = regexp.Compile(`/command/(\w{8}-\w{4}-\w{4}-\w{4}-\w{12})`)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func GetCommands(w http.ResponseWriter, r *http.Request) {
@@ -82,9 +91,7 @@ func ExecuteCommand(_ http.ResponseWriter, r *http.Request) {
 	}
 
 	guid := matches[1]
-
-	// Temporary
-	log.Println(guid)
+	chanQueue <- guid
 
 	return
 }
