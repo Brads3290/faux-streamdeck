@@ -11,8 +11,8 @@ var Buttons ButtonListSchema
 var General StreamdeckConfigSchema
 
 const (
-	CONFIG_COMMANDS = "commands.config"
-	CONFIG_GENERAL = "streamdeck.config"
+	CONFIG_COMMANDS = "buttons.config"
+	CONFIG_GENERAL  = "streamdeck.config"
 )
 
 func Load(directoryPath string) error {
