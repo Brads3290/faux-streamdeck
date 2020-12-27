@@ -1,9 +1,14 @@
 package streamdeck_server
 
 import (
+	"errors"
 	"faux-streamdeck/streamdeck_server/config"
+	"fmt"
 	"github.com/micmonay/keybd_event"
 	"log"
+	"runtime"
+	"strings"
+	"time"
 )
 
 //goland:noinspection GoSnakeCaseUsage
@@ -48,12 +53,14 @@ func runCommandOnThread(commandGuid string) {
 
 		var err error
 		switch vcasted := v.(type) {
-		case config.ShortcutCommand:
+		case *config.ShortcutCommand:
 			err = executeKeyboardShortcut(vcasted)
-		case config.ScriptCommand:
+		case *config.ScriptCommand:
 			err = executeScript(vcasted)
-		case config.ShellCommand:
+		case *config.ShellCommand:
 			err = executeShellCommand(vcasted)
+		default:
+			log.Println("Unsupported command type specified")
 		}
 
 		if err != nil {
@@ -63,14 +70,72 @@ func runCommandOnThread(commandGuid string) {
 	}
 }
 
-func executeKeyboardShortcut(cmd config.ShortcutCommand) error {
+func executeKeyboardShortcut(cmd *config.ShortcutCommand) error {
+	kb, err := keybd_event.NewKeyBonding()
+	if err != nil {
+		return err
+	}
 
+	// According to https://github.com/micmonay/keybd_event,
+	// linux needs a 2 second delay.
+	// @ToaruBaka - You *can* (and should) wait for the device to show up in /sys,
+	//	but it's way easier to just wait for a couple seconds right after setting it up
+	if runtime.GOOS == "linux" {
+		time.Sleep(2 * time.Second)
+	}
+
+	/*
+
+	 */
+
+	keysStr := cmd.Keys
+	individualKeys := strings.Split(keysStr, "+")
+
+	for _, key := range individualKeys {
+		kb.Clear()
+
+		keyTrimmed := strings.Trim(key, " \t\n\r")
+		keyTrimmed = strings.ToUpper(keyTrimmed)
+
+		// TODO: Add in right hand side versions of these
+		if keyTrimmed == "CTRL" {
+			kb.HasCTRL(true)
+		} else if keyTrimmed == "ALT" {
+			kb.HasALT(true)
+		} else if keyTrimmed == "CMD" {
+			kb.HasSuper(true)
+		} else if keyTrimmed == "SHIFT" {
+			kb.HasSHIFT(true)
+		} else {
+			mapping, ok := keyMappings[keyTrimmed]
+
+			if !ok {
+				return errors.New(fmt.Sprintf("Key string \"%s\" is invalid. No mapping found.\n", keyTrimmed))
+			}
+
+			kb.SetKeys(mapping)
+		}
+
+		err = kb.Press()
+		if err != nil {
+			return err
+		}
+
+		time.Sleep(100 * time.Millisecond)
+
+		err = kb.Release()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func executeScript(cmd config.ScriptCommand) error {
-
+func executeScript(cmd *config.ScriptCommand) error {
+	return nil
 }
 
-func executeShellCommand(cmd config.ShellCommand) error {
-
+func executeShellCommand(cmd *config.ShellCommand) error {
+	return nil
 }
