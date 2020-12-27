@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/xml"
+	"github.com/google/uuid"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -58,6 +59,12 @@ func Load(directoryPath string) error {
 			continue
 		}
 
+		u, err := uuid.NewRandom()
+		if err != nil {
+			return err
+		}
+
+		v.Id = u.String()
 		finalButtonsList = append(finalButtonsList, v)
 	}
 

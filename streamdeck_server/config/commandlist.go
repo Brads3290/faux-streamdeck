@@ -13,8 +13,9 @@ type ButtonListSchema struct {
 
 type Button struct {
 	Commands []Command `json:"commands"`
-	Name string `xml:"name,attr" json:"name"`
-	Icon string `xml:"icon,attr" json:"icon"`
+	Id       string    `xml:"-" json:"id"`
+	Name     string    `xml:"name,attr" json:"name"`
+	Icon     string    `xml:"icon,attr" json:"icon"`
 }
 
 func (b *Button) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
@@ -80,7 +81,7 @@ func NewShortcutCommand() *ShortcutCommand {
 type ScriptCommand struct {
 	CommandBase
 	Language string `xml:"language,attr" json:"language"`
-	Path string `xml:"path,attr" json:"path"`
+	Path     string `xml:"path,attr" json:"path"`
 }
 
 func NewScriptCommand() *ScriptCommand {
