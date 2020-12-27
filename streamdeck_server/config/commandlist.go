@@ -7,14 +7,14 @@ import (
 // CommandBase list definition
 
 type ButtonListSchema struct {
-	XMLName xml.Name `xml:"buttons"`
-	Buttons []Button `xml:"button"`
+	XMLName xml.Name `xml:"buttons" json:"-"`
+	Buttons []Button `xml:"button" json:"buttons"`
 }
 
 type Button struct {
-	Commands []Command
-	Name string `xml:"name,attr"`
-	Icon string `xml:"icon,attr"`
+	Commands []Command `json:"commands"`
+	Name string `xml:"name,attr" json:"name"`
+	Icon string `xml:"icon,attr" json:"icon"`
 }
 
 func (b *Button) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
@@ -42,11 +42,11 @@ func (b *Button) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 		case xml.StartElement:
 			switch tt.Name.Local {
 			case "shortcut":
-				Cmd = new(ShortcutCommand)
+				Cmd = NewShortcutCommand()
 			case "script":
-				Cmd = new(ScriptCommand)
+				Cmd = NewScriptCommand()
 			case "command":
-				Cmd = new(CommandCommand)
+				Cmd = NewCommandCommand()
 			}
 
 			// known child element found, decode it
@@ -66,8 +66,36 @@ func (b *Button) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	}
 }
 
+type ShortcutCommand struct {
+	CommandBase
+	Keys string `xml:"keys,attr" json:"keys"`
+}
 
+func NewShortcutCommand() *ShortcutCommand {
+	return &ShortcutCommand{
+		CommandBase: CommandBase{Type: "shortcut"},
+	}
+}
 
-/*
+type ScriptCommand struct {
+	CommandBase
+	Language string `xml:"language,attr" json:"language"`
+	Path string `xml:"path,attr" json:"path"`
+}
 
- */
+func NewScriptCommand() *ScriptCommand {
+	return &ScriptCommand{
+		CommandBase: CommandBase{Type: "script"},
+	}
+}
+
+type CommandCommand struct {
+	CommandBase
+	Text string `xml:"text,attr" json:"text"`
+}
+
+func NewCommandCommand() *CommandCommand {
+	return &CommandCommand{
+		CommandBase: CommandBase{Type: "command"},
+	}
+}

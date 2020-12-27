@@ -1,12 +1,15 @@
 package streamdeck_server
 
 import (
+	"encoding/json"
+	"faux-streamdeck/streamdeck_server/config"
+	"log"
 	"net/http"
-	"streamdeck_server/config"
+	"time"
 )
 
 // StartServer starts the http server to listen to the
-func StartServer() chan error {
+func StartServer() (chan error, error) {
 
 	http.HandleFunc("/commands", GetCommands)
 	http.HandleFunc("/command", ExecuteCommand)
@@ -17,12 +20,36 @@ func StartServer() chan error {
 		chErr <- err
 	}()
 
-	return chErr
+	var err error = nil
+	select {
+	case err = <-chErr:
+		log.Println("Server failed to start:", err)
+		break
+	case <-time.After(1 * time.Second):
+		log.Println("Server running on", config.General.Server.ListenOn)
+		break
+	}
+
+	return chErr, err
 }
 
 func GetCommands(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		return
+	}
+
+	jsonBytes, err := json.Marshal(config.Buttons)
+	if err != nil {
+		_, err = w.Write([]byte("error"))
+
+		if err != nil {
+			log.Println("ERROR: ", err)
+		}
+	}
+
+	_, err = w.Write(jsonBytes)
+	if err != nil {
+		log.Println("ERROR: ", err)
 	}
 
 	return
@@ -35,8 +62,3 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 
 	return
 }
-
-
-
-
-

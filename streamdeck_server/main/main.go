@@ -1,10 +1,10 @@
 package main
 
 import (
+	"faux-streamdeck/streamdeck_server/config"
+	"faux-streamdeck/streamdeck_server/streamdeck_server"
 	"flag"
 	"log"
-	"streamdeck_server/config"
-	"streamdeck_server/streamdeck_server"
 )
 
 func main() {
@@ -17,11 +17,14 @@ func main() {
 	}
 
 	// Start the server that handles client requests/commands
-	chErr := streamdeck_server.StartServer()
+	chErr, err := streamdeck_server.StartServer()
+	if err != nil {
+		return
+	}
 
 	// TODO: We may want to do stuff in here
 
-	err = <- chErr
+	err = <-chErr
 	if err != nil {
 		log.Println("Webserver finished with: ", err)
 	}
