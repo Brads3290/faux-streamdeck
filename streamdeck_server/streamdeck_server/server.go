@@ -5,14 +5,27 @@ import (
 	"faux-streamdeck/streamdeck_server/config"
 	"log"
 	"net/http"
+	"regexp"
 	"time"
 )
 
+var idExtractor *regexp.Regexp
+
 // StartServer starts the http server to listen to the
 func StartServer() (chan error, error) {
+	var err error
+
+	/*
+		/command/11df3e69-1ee5-4744-8dd9-076210c3f871
+	*/
+
+	idExtractor, err = regexp.Compile(`/command/(\w{8}-\w{4}-\w{4}-\w{4}-\w{12})`)
+	if err != nil {
+		panic(err)
+	}
 
 	http.HandleFunc("/commands", GetCommands)
-	http.HandleFunc("/command", ExecuteCommand)
+	http.HandleFunc("/command/", ExecuteCommand)
 
 	chErr := make(chan error)
 	go func() {
@@ -20,7 +33,6 @@ func StartServer() (chan error, error) {
 		chErr <- err
 	}()
 
-	var err error = nil
 	select {
 	case err = <-chErr:
 		log.Println("Server failed to start:", err)
@@ -59,6 +71,20 @@ func ExecuteCommand(_ http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		return
 	}
+
+	// Path will be in the form:
+	// /command/{guid}
+	path := r.URL.Path
+	matches := idExtractor.FindStringSubmatch(path)
+	if len(matches) == 0 {
+		log.Println("Invalid request:", path)
+		return
+	}
+
+	guid := matches[1]
+
+	// Temporary
+	log.Println(guid)
 
 	return
 }
