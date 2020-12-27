@@ -2,6 +2,7 @@ package streamdeck_server
 
 import (
 	"encoding/json"
+	"errors"
 	"faux-streamdeck/streamdeck_server/config"
 	"log"
 	"net/http"
@@ -55,43 +56,72 @@ func CreateRegex() {
 }
 
 func GetCommands(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		return
-	}
-
-	jsonBytes, err := json.Marshal(config.Buttons)
-	if err != nil {
-		_, err = w.Write([]byte("error"))
-
-		if err != nil {
-			log.Println("ERROR: ", err)
+	unifyResponse(w, func() (interface{}, error) {
+		if r.Method != "GET" {
+			return nil, errors.New("invalid HTTP method")
 		}
+
+		return config.Buttons, nil
+	})
+}
+
+func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
+	unifyResponse(w, func() (interface{}, error) {
+		if r.Method != "POST" {
+			return nil, errors.New("invalid HTTP method")
+		}
+
+		// Path will be in the form:
+		// /command/{guid}
+		path := r.URL.Path
+		matches := idExtractor.FindStringSubmatch(path)
+		if len(matches) == 0 {
+			return nil, errors.New("Invalid resource path: " + path)
+		}
+
+		guid := matches[1]
+		chanQueue <- guid
+
+		return nil, nil
+	})
+}
+
+func unifyResponse(w http.ResponseWriter, action func() (interface{}, error)) {
+	data, err := action()
+
+	jsonResponse := struct {
+		Error  bool        `json:"error"`
+		Reason string      `json:"reason"`
+		Data   interface{} `json:"data"`
+	}{
+		Error:  false,
+		Reason: "",
+		Data:   nil,
 	}
 
-	_, err = w.Write(jsonBytes)
 	if err != nil {
-		log.Println("ERROR: ", err)
+		jsonResponse.Error = true
+		jsonResponse.Reason = err.Error()
+	} else {
+		jsonResponse.Error = false
+		jsonResponse.Reason = ""
+		jsonResponse.Data = data
 	}
 
+	writeResponse(w, jsonResponse)
 	return
 }
 
-func ExecuteCommand(_ http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		return
+func writeResponse(w http.ResponseWriter, responseData interface{}) {
+	b, err := json.Marshal(responseData)
+	if err != nil {
+		log.Println("ERROR - Failed to marshal json response. Error = ", err)
 	}
 
-	// Path will be in the form:
-	// /command/{guid}
-	path := r.URL.Path
-	matches := idExtractor.FindStringSubmatch(path)
-	if len(matches) == 0 {
-		log.Println("Invalid request:", path)
-		return
+	_, err = w.Write(b)
+	if err != nil {
+		log.Println("ERROR - Failed to write to response writer. Error = ", err)
 	}
-
-	guid := matches[1]
-	chanQueue <- guid
 
 	return
 }
