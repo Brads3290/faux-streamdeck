@@ -90,13 +90,13 @@ func NewScriptCommand() *ScriptCommand {
 	}
 }
 
-type CommandCommand struct {
+type ShellCommand struct {
 	CommandBase
 	Text string `xml:"text,attr" json:"text"`
 }
 
-func NewCommandCommand() *CommandCommand {
-	return &CommandCommand{
+func NewCommandCommand() *ShellCommand {
+	return &ShellCommand{
 		CommandBase: CommandBase{Type: "command"},
 	}
 }
