@@ -55,7 +55,7 @@ func GetCommands(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
+func ExecuteCommand(_ http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		return
 	}
