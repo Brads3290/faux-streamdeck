@@ -12,7 +12,7 @@ type ButtonListSchema struct {
 }
 
 type Button struct {
-	Commands []Command `json:"commands"`
+	Commands []Command `json:"-"`
 	Id       string    `xml:"-" json:"id"`
 	Name     string    `xml:"name,attr" json:"name"`
 	Icon     string    `xml:"icon,attr" json:"icon"`
