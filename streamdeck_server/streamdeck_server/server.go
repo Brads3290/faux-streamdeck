@@ -80,6 +80,19 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 		}
 
 		guid := matches[1]
+
+		found := false
+		for _, v := range config.Buttons.Buttons {
+			if v.Id == guid {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return nil, errors.New("guid does not match any button")
+		}
+
 		chanQueue <- guid
 
 		return nil, nil
