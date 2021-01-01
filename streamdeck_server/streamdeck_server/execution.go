@@ -91,13 +91,11 @@ func executeKeyboardShortcut(cmd *config.ShortcutCommand) error {
 	keysStr := cmd.Keys
 	individualKeys := strings.Split(keysStr, "+")
 
+	kb.Clear()
 	for _, key := range individualKeys {
-		kb.Clear()
-
 		keyTrimmed := strings.Trim(key, " \t\n\r")
 		keyTrimmed = strings.ToUpper(keyTrimmed)
 
-		// TODO: Add in right hand side versions of these
 		if keyTrimmed == "CTRL" {
 			kb.HasCTRL(true)
 		} else if keyTrimmed == "ALT" {
@@ -115,18 +113,18 @@ func executeKeyboardShortcut(cmd *config.ShortcutCommand) error {
 
 			kb.SetKeys(mapping)
 		}
+	}
 
-		err = kb.Press()
-		if err != nil {
-			return err
-		}
+	err = kb.Press()
+	if err != nil {
+		return err
+	}
 
-		time.Sleep(100 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
-		err = kb.Release()
-		if err != nil {
-			return err
-		}
+	err = kb.Release()
+	if err != nil {
+		return err
 	}
 
 	return nil
