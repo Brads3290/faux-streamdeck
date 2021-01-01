@@ -18,9 +18,12 @@ type Button struct {
 	Icon     string    `xml:"icon,attr" json:"icon"`
 }
 
+// UnmarshalXML is used for Button to create the command list, because the commands can be one of several
+// different types, each needing different representions.
 func (b *Button) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	b.Commands = make([]Command, 0)
 
+	// Decode the attributes for the Button object itself
 	for _, v := range start.Attr {
 		switch v.Name.Local {
 		case "name":
@@ -30,7 +33,10 @@ func (b *Button) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 		}
 	}
 
-	// decode inner elements
+	// Decode the inner elements, which could be one of multiple types:
+	// - shortcut
+	// - script
+	// - shell command
 	for {
 		t, err := d.Token()
 		if err != nil {
@@ -39,18 +45,23 @@ func (b *Button) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 
 		var Cmd Command = nil
 
+		// For each token, check if it's a start element or an end element, otherwise, ignore.
 		switch tt := t.(type) {
 		case xml.StartElement:
+
+			// If start element, decode it based on it's element name
 			switch tt.Name.Local {
 			case "shortcut":
 				Cmd = NewShortcutCommand()
 			case "script":
 				Cmd = NewScriptCommand()
 			case "command":
-				Cmd = NewCommandCommand()
+				Cmd = NewShellCommand()
+			default:
+				Cmd = nil
 			}
 
-			// known child element found, decode it
+			// Known child element found, decode it
 			if Cmd != nil {
 				err = d.DecodeElement(Cmd, &tt)
 				if err != nil {
@@ -60,6 +71,9 @@ func (b *Button) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 				b.Commands = append(b.Commands, Cmd)
 			}
 		case xml.EndElement:
+
+			// If this end element is the end element for the <button> tag that we're
+			// processing, we're done!
 			if tt == start.End() {
 				return nil
 			}
@@ -95,7 +109,7 @@ type ShellCommand struct {
 	Text string `xml:"text,attr" json:"text"`
 }
 
-func NewCommandCommand() *ShellCommand {
+func NewShellCommand() *ShellCommand {
 	return &ShellCommand{
 		CommandBase: CommandBase{Type: "command"},
 	}

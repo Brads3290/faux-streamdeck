@@ -2,6 +2,8 @@ package streamdeck_server
 
 import "github.com/micmonay/keybd_event"
 
+// keyMappings is a map of key strings that are used in the button config, to the key constants
+// that are used by thew keybd_event package.
 var keyMappings = map[string]int{
 	"SP1":        keybd_event.VK_SP1,
 	"SP2":        keybd_event.VK_SP2,

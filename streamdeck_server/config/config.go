@@ -16,6 +16,7 @@ const (
 	CONFIG_GENERAL  = "streamdeck.config"
 )
 
+// Load loads the configuration files from the configuration directory that it's given.
 func Load(directoryPath string) error {
 
 	// Check the directory path exists

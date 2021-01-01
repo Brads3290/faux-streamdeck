@@ -16,6 +16,11 @@ const (
 	MAX_COMMAND_QUEUE_SIZE = 8
 )
 
+// TODO: Implement managed thread pool
+
+// StartQueueThread starts the thread that handles command guids on the queue. It returns a channel, which can
+// be used to queue commands for processing. When a command is received the queue thread will start a separate
+// worker thread to process the command.
 func StartQueueThread() chan string {
 	chanQueue := make(chan string, MAX_COMMAND_QUEUE_SIZE)
 
@@ -23,6 +28,8 @@ func StartQueueThread() chan string {
 	return chanQueue
 }
 
+// runQueueThread monitors the command queue, and for each command that comes in, creates a new
+// thread to process it.
 func runQueueThread(chanQueue chan string) {
 	for {
 		guid, ok := <-chanQueue
@@ -34,6 +41,9 @@ func runQueueThread(chanQueue chan string) {
 	}
 }
 
+// runCommandOnThread takes a command guid, finds it's associated button in the config and
+// for each configured command, executes the appropriate command handler - executeKeyboardShortcut, executeScript,
+// executeShellCommand.
 func runCommandOnThread(commandGuid string) {
 	var button *config.Button = nil
 
@@ -70,6 +80,8 @@ func runCommandOnThread(commandGuid string) {
 	}
 }
 
+// executeKeyboardShortcut uses github.com/micmonay/keybd_event to simulate keyboard events
+// based on the config.ShortcutCommand that it's given
 func executeKeyboardShortcut(cmd *config.ShortcutCommand) error {
 	kb, err := keybd_event.NewKeyBonding()
 	if err != nil {
